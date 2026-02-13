@@ -1,53 +1,79 @@
-# Script to download the data from a given source and create the splits
-# This is a mock version that generate fake problems
+import pandas as pd
+import os
+import requests
+import zipfile
+import shutil
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
+# --- CONFIGURATION ---
+ZENODO_URL = "https://zenodo.org/records/16736908/files/GEMS-GER_data.zip?download=1"
+RAW_DIR = Path("raw_data")
+EXTRACT_DIR = RAW_DIR / "extracted"
+MAX_TRAIN_ROWS = 100000  # <--- LIMIT TRAINING SIZE HERE (e.g., 100k rows)
 
-PHASE = 'dev_phase'
+def run_setup():
+    # 1. Directory Setup
+    input_base = Path("dev_phase/input_data")
+    for f in ["train", "test"]: (input_base / f).mkdir(parents=True, exist_ok=True)
+    Path("dev_phase/reference_data/test").mkdir(parents=True, exist_ok=True)
+    EXTRACT_DIR.mkdir(parents=True, exist_ok=True)
 
-DATA_DIR = Path(PHASE) / 'input_data'
-REF_DIR = Path(PHASE) / 'reference_data'
+    # 2. Download & Extract (Same logic as before)
+    zip_path = RAW_DIR / "GEMS-GER_data.zip"
+    if not zip_path.exists():
+        print("Downloading...")
+        r = requests.get(ZENODO_URL, stream=True)
+        with open(zip_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192): f.write(chunk)
+    
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(EXTRACT_DIR)
 
+    # 3. Locate & Merge
+    static_file = next(EXTRACT_DIR.rglob("*static*.csv"))
+    dynamic_folder = next(EXTRACT_DIR.rglob("dynamic"))
+    df_static = pd.read_csv(static_file)
+    df_static.columns = df_static.columns.str.strip()
 
-def make_csv(data, filepath):
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(data).to_csv(filepath, index=False)
+    li = []
+    for filename in dynamic_folder.glob("*.csv"):
+        df = pd.read_csv(filename)
+        df['well_id_str'] = filename.stem
+        if 'Unnamed: 0' in df.columns:
+            df['date_dt'] = pd.to_datetime(df['Unnamed: 0'])
+            df['month'] = df['date_dt'].dt.month
+            df['year'] = df['date_dt'].dt.year
+        df.drop(columns=[c for c in ['Unnamed: 0', 'GWL_flag'] if c in df.columns], inplace=True)
+        li.append(df)
 
+    master_df = pd.concat(li, ignore_index=True)
+    master_df = pd.merge(master_df, df_static, left_on='well_id_str', right_on='MW_ID', how='left').drop(columns=['MW_ID'])
+
+    # 4. Temporal Split (80/20)
+    master_df = master_df.sort_values('date_dt')
+    unique_dates = sorted(master_df['date_dt'].unique())
+    split_date = unique_dates[int(len(unique_dates) * 0.8)]
+    
+    train_df = master_df[master_df['date_dt'] < split_date]
+    test_df = master_df[master_df['date_dt'] >= split_date]
+
+    # --- 5. REDUCE DATA SIZE ---
+    if len(train_df) > MAX_TRAIN_ROWS:
+        print(f"Reducing training data from {len(train_df)} to {MAX_TRAIN_ROWS} rows...")
+        # Option A: Take the MOST RECENT rows (Best for time-series)
+        train_df = train_df.tail(MAX_TRAIN_ROWS)
+        
+        # Option B: Random Sampling (Uncomment if you prefer variety over recency)
+        # train_df = train_df.sample(n=MAX_TRAIN_ROWS, random_state=42).sort_values('date_dt')
+
+    # 6. Save Files
+    train_df.to_csv(input_base / "train/train.csv", index=False)
+    
+    meta_cols = ['well_id_str', 'date_dt']
+    test_df.drop(columns=['GWL'] + meta_cols).to_csv(input_base / "test/test_features.csv", index=False)
+    test_df[['GWL']].to_csv("dev_phase/reference_data/test/test_labels.csv", index=False)
+
+    print(f"🚀 Setup Complete! Final Train Size: {len(train_df)}")
 
 if __name__ == "__main__":
-
-    import argparse
-    parser = argparse.ArgumentParser(
-        description='Load or generate data for the benchmark'
-    )
-    parser.add_argument('--seed', type=int, default=42,
-                        help='Random seed for data generation')
-    args = parser.parse_args()
-
-    # Generate and split the data
-    rng = np.random.RandomState(args.seed)
-    X, y = make_classification(n_samples=500, n_features=5, random_state=rng)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.4, random_state=rng
-    )
-    X_test, X_private_test, y_test, y_private_test = train_test_split(
-        X_test, y_test, test_size=0.5, random_state=rng
-    )
-
-    # Store the data in the correct folders:
-    # - input_data contains train data (both features and labels) and only
-    #   test features so the test labels are kept secret
-    # - reference_data contains the test labels for scoring
-    for split, X_split, y_split in [
-        ('train', X_train, y_train),
-        ('test', X_test, y_test),
-        ('private_test', X_private_test, y_private_test),
-    ]:
-        split_dir = DATA_DIR / split
-        make_csv(X_split, split_dir / f'{split}_features.csv')
-        label_dir = split_dir if split == "train" else REF_DIR
-        make_csv(y_split, label_dir / f'{split}_labels.csv')
+    run_setup()
