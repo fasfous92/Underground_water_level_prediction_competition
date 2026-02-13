@@ -1,0 +1,48 @@
+version: 2
+title: GEMS-GER Groundwater Level Prediction Challenge
+description: Predict groundwater level (GWL) across Germany using 50+ environmental features.
+image: logo.png
+registration_auto_approve: True  # Set to True to let people jump right in
+
+terms: pages/terms.md
+pages:
+  - title: Overview
+    file: pages/overview.md
+  - title: Data Description
+    file: pages/data.md
+  - title: Participation
+    file: pages/participate.md
+  - title: Timeline
+    file: pages/timeline.md
+
+tasks:
+  - index: 0
+    name: GWL Regression Task
+    description: 'Predict depth to groundwater using historical time-series and static site data.'
+    input_data: dev_phase/input_data/
+    reference_data: dev_phase/reference_data/
+    ingestion_program: ingestion_program/
+    scoring_program: scoring_program/
+
+solutions:
+  - index: 0
+    tasks:
+    - 0
+    path: solution/
+
+phases:
+  - name: Development Phase
+    description: 'Train on historical data and submit predictions for the Public Leaderboard.'
+    start: 02-13-2026  # Starting today!
+    end: 05-31-2026
+    tasks:
+      - 0
+
+leaderboards:
+  - title: Results
+    key: main
+    columns:
+      - title: RMSE
+        key: rmse  # Must match scores['rmse'] in scoring.py
+        index: 0
+        sorting: asc # Lower is better!

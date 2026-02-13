@@ -1,18 +1,23 @@
 # Terms and Conditions
 
-## Lorem Ipsum
+By participating in the GEMS-GER Groundwater Level Prediction Challenge, you agree to the following terms:
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure
-dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+## 1. Data Usage & Intellectual Property
+* **Academic Use:** The dataset provided (GEMS-GER) is for educational and competition purposes only. Commercial redistribution of the raw data is prohibited.
+* **Winning Submissions:** Winners of the challenge agree to make their winning code (submission.zip) available under an open-source license (e.g., MIT or Apache 2.0) to allow for scientific verification.
 
-## Sed ut perspiciatis
+## 2. Competition Integrity
+* **No Manual Labeling:** Participants are strictly forbidden from manually labeling the test data or searching for the original Zenodo dataset to extract the hidden ground truth labels.
+* **No External Data:** You may only use the provided dataset and static site features. The use of external meteorological data (e.g., from DWD or other sources) is not permitted unless specifically authorized by the organizers.
+* **One Account per Person:** Multiple accounts per participant are not allowed. Collaborating in teams is encouraged, but a team must submit under a single account.
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae 
-ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit 
-aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam 
-est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore 
-et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, 
-nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae 
-consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+## 3. Submission Limits & Phases
+* **Daily Limit:** You are limited to **5 submissions per day** during the Development Phase to prevent "leaderboard probing."
+* **Final Selection:** At the end of the Development Phase, you must select **one** submission for the Final Phase. This submission will be re-evaluated against the private test set.
+
+## 4. Resource Usage
+* **Memory Constraints:** Submissions must run within the memory limits of the Codabench server (typically 4GB-8GB RAM). Models that require excessive resources or crash the ingestion program will be disqualified.
+* **Training Time:** Your model's `fit` and `predict` logic must complete within the allotted time limit (e.g., 30 minutes for the 1M row dataset).
+
+## 5. Disqualification
+The organizers reserve the right to disqualify any participant found to be in violation of these rules or behaving in a way that undermines the fairness of the competition.

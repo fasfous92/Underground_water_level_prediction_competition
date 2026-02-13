@@ -1,10 +1,10 @@
 version: 2
-title: GEMS-GER Groundwater Level Prediction Challenge
-description: Predict groundwater level (GWL) across Germany using 50+ environmental features.
+title: "GEMS-GER Groundwater Level Prediction Challenge"
+description: "Predict groundwater levels (GWL) across Germany."
 image: logo.png
-registration_auto_approve: True  # Set to True to let people jump right in
-
+registration_auto_approve: True
 terms: pages/terms.md
+
 pages:
   - title: Overview
     file: pages/overview.md
@@ -17,32 +17,41 @@ pages:
 
 tasks:
   - index: 0
-    name: GWL Regression Task
-    description: 'Predict depth to groundwater using historical time-series and static site data.'
+    name: "Development Task"
     input_data: dev_phase/input_data/
     reference_data: dev_phase/reference_data/
-    ingestion_program: ingestion_program/
     scoring_program: scoring_program/
-
-solutions:
-  - index: 0
-    tasks:
-    - 0
-    path: solution/
+    ingestion_program: ingestion_program/
+  - index: 1
+    name: "Final Task"
+    input_data: final_phase/input_data/
+    reference_data: final_phase/reference_data/
+    scoring_program: scoring_program/
+    ingestion_program: ingestion_program/
 
 phases:
-  - name: Development Phase
-    description: 'Train on historical data and submit predictions for the Public Leaderboard.'
-    start: 02-13-2026  # Starting today!
-    end: 05-31-2026
-    tasks:
-      - 0
+  - index: 0
+    name: "Development Phase"
+    start: 2026-02-13 12:00:00
+    end: 2026-04-14 00:00:00  # Phase 1 ends here
+    max_submissions: 100
+    max_submissions_per_day: 5
+    starting_kit: starting_kit.zip
+    public_data: starting_kit.zip
+    tasks: [0]
+
+  - index: 1
+    name: "Final Phase"
+    start: 2026-04-15   # Must start AFTER Phase 1 ends
+    max_submissions: 1
+    auto_migrate_to_this_phase: True
+    tasks: [1]
 
 leaderboards:
   - title: Results
     key: main
     columns:
       - title: RMSE
-        key: rmse  # Must match scores['rmse'] in scoring.py
+        key: rmse
         index: 0
-        sorting: asc # Lower is better!
+        sorting: asc

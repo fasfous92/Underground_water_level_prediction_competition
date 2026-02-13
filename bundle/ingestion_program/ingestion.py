@@ -16,19 +16,26 @@ def evaluate_model(model, X_test):
     y_pred = model.predict(X_test)
     return pd.DataFrame({'GWL': y_pred})
 
-def get_train_data(data_dir, chunksize=200000):
-    train_path = Path(data_dir) / "train" / "train.csv"
-    chunks = []
+def get_train_data(data_dir, chunksize=100000):
+    """
+    Loads 'train.csv' in chunks for memory safety.
+    Contains both features and labels.
+    """
+    data_dir = Path(data_dir)
+    train_path = data_dir / "train" / "train.csv"
     
-    print(f"Reading training data in chunks of {chunksize}...")
-    # Use chunksize to keep RAM usage low during load
+    # Fallback for local testing vs Codabench environment
+    if not train_path.exists():
+        train_path = data_dir / "train.csv"
+
+    print(f"Reading {train_path} in chunks...")
+    
+    chunks = []
     for chunk in pd.read_csv(train_path, chunksize=chunksize):
-        # Optional: Optimize float precision to save more RAM
-        for col in chunk.select_dtypes(include=['float64']).columns:
-            chunk[col] = chunk[col].astype('float32')
         chunks.append(chunk)
     
     full_df = pd.concat(chunks, axis=0)
+    
     y_train = full_df['GWL']
     X_train = full_df.drop(columns=['GWL'])
     

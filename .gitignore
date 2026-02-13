@@ -7,3 +7,4 @@ ingestion_res/*
 scoring_res/*
 dev_phase/*
 test_notebook/*
+raw_data/*
