@@ -67,7 +67,9 @@ public and private test set.
 Make sure that the `setup_data.py` script has been run to generate the data for
 the competition.
 
-Then, run the `create_bundle.py` script to create the codabench bundle archive:
+First, run the `tools/create_starting_kit.py` script
+
+Then, run the `tools/create_bundle.py` script to create the codabench bundle archive:
 
 ```bash
 python create_bundle.py
@@ -89,47 +91,3 @@ To test the scoring program, run:
 python scoring_program/scoring.py --reference-dir dev_phase/reference_data/ --output-dir scoring_res  --prediction-dir ingestion_res/
 ```
 
-
-### Setting up and testing the docker image
-
-For convenience, a python script `tools/run_docker.py` is provided to build
-the docker image, and run the ingestion and scoring programs inside the docker
-container.
-This script requires installing the `docker` python package, which can be done via pip:
-
-```bash
-pip install docker
-python tools/run_docker.py
-```
-
-You can also perform these steps manually.
-You first need to build the docker image locally from the `Dockerfile` with:
-
-```bash
-docker build -t docker-image tools
-```
-
-To test the docker image locally, run:
-
-```bash
-docker run --rm -u root \
-    -v "./ingestion_program":"/app/ingestion_program" \
-    -v "./dev_phase/input_data":/app/input_data \
-    -v "./ingestion_res":/app/output \
-    -v "./solution":/app/ingested_program \
-    --name ingestion docker-image \
-        python /app/ingestion_program/ingestion.py
-
-docker run --rm -u root \
-    -v "./scoring_program":"/app/scoring_program" \
-    -v "./dev_phase/reference_data":/app/input/ref \
-    -v "./ingestion_res":/app/input/res \
-    -v "./scoring_res":/app/output \
-    --name scoring docker-image \
-        python /app/scoring_program/scoring.py
-```
-
-### CI for the bundle
-
-This repo defines a CI for the bundle, which build a docker image from the `tools/Dockerfile`,
-and try to run `tools/setup_data.py` and then the ingestion/scoring programs.
