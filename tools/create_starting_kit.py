@@ -18,7 +18,8 @@ ITEMS_TO_COPY = [
     ("solution/submission.py", "submission.py"),     # Move to root as the template
     ("ingestion_program/ingestion.py", "ingestion_program/ingestion.py"),
     ("scoring_program/scoring.py", "scoring_program/scoring.py"),
-    ("dev_phase/input_data", "dev_phase/input_data"), # Include only input data
+    # ("dev_phase/input_data", "dev_phase/input_data"), # Include only input data
+    # ("final_phase/input_data", "final_phase/input_data")
 ]
 
 def build():

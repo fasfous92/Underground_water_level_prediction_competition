@@ -1,4 +1,5 @@
 import json
+import argparse
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -6,75 +7,71 @@ from sklearn.metrics import mean_squared_error
 
 def compute_rmse(predictions, targets):
     """
-    Calculates the Root Mean Squared Error (RMSE).
+    Calculates the Root Mean Squared Error (RMSE) for the GWL column.
     """
-    # Ensure we are comparing the same number of rows
-    # Targets usually has 1 column ('GWL'), Predictions usually has 1 column ('GWL')
-    y_pred = predictions.iloc[:, 0] if isinstance(predictions, pd.DataFrame) else predictions
-    y_true = targets.iloc[:, 0] if isinstance(targets, pd.DataFrame) else targets
-
-    # Align by index and drop any rows with NaNs in ground truth (if any)
-    combined = pd.concat([
-        pd.Series(y_pred, name='pred').reset_index(drop=True), 
-        pd.Series(y_true, name='true').reset_index(drop=True)
-    ], axis=1).dropna()
+    # Assuming both DataFrames have a 'GWL' column based on ingestion.py
+    y_pred = predictions['GWL'].values
+    y_true = targets['GWL'].values
     
-    if combined.empty:
-        print("Warning: No data to score.")
-        return 999.0
-    
-    rmse = np.sqrt(mean_squared_error(combined['true'], combined['pred']))
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
     return float(rmse)
 
-def main(reference_dir, prediction_dir, output_dir):
+def main(input_dir, output_dir):
+    # Codabench passes a single input_dir containing 'ref' (answers) and 'res' (predictions)
+    ref_dir = Path(input_dir) / 'ref'
+    res_dir = Path(input_dir) / 'res'
+
     scores = {}
-    
+
     try:
-        # 1. Path Setup
-        # Reference labels: [ref_dir]/test/test_labels.csv (from setup_data.py)
-        # Predictions: [pred_dir]/test_predictions.csv (from ingestion.py)
-        label_path = reference_dir / 'test' / 'test_labels.csv'
-        pred_path = prediction_dir / 'test_predictions.csv'
-
-        # Fallback if structure differs slightly on different platforms
-        if not label_path.exists():
-            label_path = reference_dir / 'test_labels.csv'
-
-        # 2. Load Data
-        targets = pd.read_csv(label_path)
+        # --- 1. Collect Predictions (from Ingestion) ---
+        pred_path = res_dir / "test_predictions.csv"
         predictions = pd.read_csv(pred_path)
 
-        # 3. Compute Score
+        # --- 2. Collect Reference Labels (Ground Truth) ---
+        # Adjust this path if your labels are not inside a 'test' subfolder!
+        label_path = ref_dir / "test" / "test_labels.csv"
+        if not label_path.exists():
+            label_path = ref_dir / "test_labels.csv" # Fallback
+            
+        targets = pd.read_csv(label_path)
+
+        # --- 3. Compute Score ---
         scores['rmse'] = compute_rmse(predictions, targets)
         
     except Exception as e:
         print(f"❌ Scoring Error: {e}")
+        # Assign a terrible score if something breaks so the leaderboard doesn't crash
         scores['rmse'] = 999.0
 
-    # 4. Include Runtime Metadata (Captured by ingestion.py)
+    # --- 4. Collect Metadata (from Ingestion) ---
+    # This pulls your train_time, test_time, and duration into the leaderboard!
     try:
-        metadata_path = prediction_dir / 'metadata.json'
+        metadata_path = res_dir / "metadata.json"
         if metadata_path.exists():
-            with open(metadata_path, 'r') as f:
+            with open(metadata_path, "r") as f:
                 metadata = json.load(f)
-            scores.update(metadata)
-    except Exception:
-        pass
+                scores.update(metadata)
+    except Exception as e:
+        print(f"Warning: Could not read metadata.json. {e}")
 
-    # 5. Save results for the Leaderboard
+    # --- 5. Save Results for Leaderboard ---
+    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    with open(output_dir / 'scores.json', 'w') as f:
-        json.dump(scores, f)
     
-    print(f"Scoring finished. RMSE: {scores['rmse']:.4f}")
+    with open(output_dir / "scores.json", "w") as f:
+        json.dump(scores, f)
+        
+    print(f"Scoring complete. RMSE: {scores.get('rmse', 'ERROR'):.4f}")
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    # Paths provided by Codabench environment
-    parser.add_argument("--reference-dir", type=str, default="/app/input/ref")
-    parser.add_argument("--prediction-dir", type=str, default="/app/input/res")
-    parser.add_argument("--output-dir", type=str, default="/app/output")
+    parser = argparse.ArgumentParser(description="Scoring program")
+    
+    # Codabench passes these as positional arguments
+    parser.add_argument("input_dir", type=str, help="Directory containing ref and res folders")
+    parser.add_argument("output_dir", type=str, help="Directory to save scores.json")
+    parser.add_argument("program_dir", type=str, nargs='?', default="", help="Optional program dir")
+    
     args = parser.parse_args()
 
-    main(Path(args.reference_dir), Path(args.prediction_dir), Path(args.output_dir))
+    main(args.input_dir, args.output_dir)

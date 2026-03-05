@@ -1,37 +1,41 @@
+import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.compose import ColumnTransformer
-from sklearn.compose import make_column_selector as selector
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 
+class NumericSelector(BaseEstimator, TransformerMixin):
+    """
+    Custom transformer to select only numeric columns.
+    """
+    def fit(self, X, y=None):
+        return self 
+        
+    def transform(self, X, y=None):
+        # If the input is a Pandas DataFrame, drop the string/object columns
+        if isinstance(X, pd.DataFrame):
+            return X.select_dtypes(include=['number'])
+        return X
+
 def get_model():
     """
-    Returns a model that automatically filters out string columns 
-    to avoid ValueErrors and fits on numeric data only.
+    Returns a lightweight, extremely fast Random Forest for testing.
     """
     
-    # 1. Define a transformer that ONLY picks numeric columns (float64, int64)
-    # This automatically ignores 'well_id_str' and 'date_dt' because they are strings/objects
-    numeric_transformer = Pipeline(steps=[
+    preprocessor = Pipeline(steps=[
+        ('selector', NumericSelector()),
         ('imputer', SimpleImputer(strategy='median'))
     ])
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', numeric_transformer, selector(dtype_include=['float64', 'int64']))
-        ],
-        remainder='drop' # This explicitly drops anything that isn't a number
-    )
-
-    # 2. Create the full pipeline
+    # 2. Create the full pipeline with a "Fast" Random Forest
     model = Pipeline(steps=[
         ('preprocessor', preprocessor),
-        ('regressor', RandomForestRegressor(n_estimators=50, max_depth=8, random_state=42))
+        ('regressor', RandomForestRegressor(
+            n_estimators=10,       # Reduced from 50 (Makes it 5x faster)
+            max_depth=5,           # Reduced from 8 (Keeps trees shallow and quick)
+            n_jobs=-1,             # CRITICAL: Forces Python to use all CPU cores!
+            random_state=42
+        ))
     ])
     
     return model

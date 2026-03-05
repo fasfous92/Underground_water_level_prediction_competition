@@ -16,8 +16,8 @@ BUNDLE_DIRS = {
     "pages": ROOT_DIR / "pages",
     "ingestion_program": ROOT_DIR / "ingestion_program",
     "scoring_program": ROOT_DIR / "scoring_program",
-    "dev_phase": ROOT_DIR / "dev_phase",
-    "final_phase": ROOT_DIR / "final_phase",
+    # "dev_phase": ROOT_DIR / "dev_phase",
+    # "final_phase": ROOT_DIR / "final_phase",
 }
 
 if __name__ == "__main__":

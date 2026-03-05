@@ -80,14 +80,18 @@ def main(data_dir, output_dir):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Ingestion program")
-    parser.add_argument("--data-dir", type=str, default="/app/input_data")
-    parser.add_argument("--output-dir", type=str, default="/app/output")
-    parser.add_argument("--submission-dir", type=str, default="/app/ingested_program")
+    
+    # Changed from optional flags (--flag) to positional arguments 
+    # to match the Codabench backend command formatin
+    parser.add_argument("data_dir", type=str, help="Path to input data")
+    parser.add_argument("output_dir", type=str, help="Path to output results")
+    parser.add_argument("program_dir", type=str, help="Path to the ingestion program")
+    parser.add_argument("submission_dir", type=str, help="Path to the participant's submission")
 
     args = parser.parse_args()
     
     # Add submission and current folder to path so we can find 'submission.py'
     sys.path.append(args.submission_dir)
-    sys.path.append(str(Path(__file__).parent.resolve()))
+    sys.path.append(args.program_dir)
 
     main(Path(args.data_dir), Path(args.output_dir))

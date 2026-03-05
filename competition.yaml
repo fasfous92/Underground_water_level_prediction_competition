@@ -18,14 +18,11 @@ pages:
 tasks:
   - index: 0
     name: "Development Task"
-    input_data: dev_phase/input_data/
-    reference_data: dev_phase/reference_data/
+    # Notice we left the data out! We will add it in the UI later.
     scoring_program: scoring_program/
     ingestion_program: ingestion_program/
   - index: 1
     name: "Final Task"
-    input_data: final_phase/input_data/
-    reference_data: final_phase/reference_data/
     scoring_program: scoring_program/
     ingestion_program: ingestion_program/
 
@@ -33,16 +30,16 @@ phases:
   - index: 0
     name: "Development Phase"
     start: 2026-02-13 12:00:00
-    end: 2026-04-14 00:00:00  # Phase 1 ends here
+    end: 2026-04-14 00:00:00  
     max_submissions: 100
     max_submissions_per_day: 5
     starting_kit: starting_kit.zip
-    public_data: starting_kit.zip
+    # public_data removed to prevent server crashes
     tasks: [0]
 
   - index: 1
     name: "Final Phase"
-    start: 2026-04-15   # Must start AFTER Phase 1 ends
+    start: 2026-04-15 00:00:00  # Added the required timestamp!
     max_submissions: 1
     auto_migrate_to_this_phase: True
     tasks: [1]
@@ -55,3 +52,15 @@ leaderboards:
         key: rmse
         index: 0
         sorting: asc
+      - title: Train Time (s)
+        key: train_time
+        index: 1
+        sorting: desc
+      - title: Test Time (s)
+        key: test_time
+        index: 2
+        sorting: desc
+      - title: Total Duration
+        key: duration
+        index: 3
+        sorting: desc
